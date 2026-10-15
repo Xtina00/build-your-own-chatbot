@@ -7,7 +7,7 @@ authors = [
     { name = "Johannes Baumgartl", email = "johannes.baumgartl@hs-esslingen.de" }
 ]
 dependencies = [
-    "langchain>=1.2.12,<2",
+    "langchain>=1.4.4,<2",
     "langchain-openai>=1.1.11,<2",
     "langchain-community>=0.4.1,<1",
     "langchain-ollama>=1.0.1,<2",
