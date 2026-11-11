@@ -58,7 +58,10 @@ class CustomChatBot:
             self._pull_embedding_model()
 
         # Task: initialize the embedding model
-        self.embedding_function = ...
+        self.embedding_function = OllamaEmbeddings(
+            model=EMBEDDING_MODEL,
+            base_url=f"http://{OLLAMA_HOST_NAME}:11434"
+        )
 
         # Initialize the ChromaDB client
         self.client = self._initialize_chroma_client()
@@ -72,10 +75,14 @@ class CustomChatBot:
             self._index_data_to_vector_db()
 
         # Task: Initialize the document retriever
-        self.retriever = ...
+        self.retriever = self.vector_db.as_retriever(search_kwargs={"k": 3})
+
 
         # Task: Initialize the large language model (LLM) from Ollama
-        self.llm = ...
+        self.llm = ChatOllama(
+            model=MODEL_NAME,
+            base_url=f"http://{OLLAMA_HOST_NAME}:11434"
+        )
 
         # Set up the retrieval-augmented generation (RAG) pipeline
         self.qa_rag_chain = self._initialize_qa_rag_chain()
@@ -100,7 +107,13 @@ class CustomChatBot:
         logger.info("Initialize chroma db client.")
 
         # Task: Initilaize chromadb http client
-        return ...
+        return chromadb.HttpClient(
+            host=CHROMA_HOST_NAME,
+            port=8000,
+            tenant=DEFAULT_TENANT,
+            database=DEFAULT_DATABASE,
+        )
+    
 
     def _initialize_vector_db(self) -> Chroma:
         """
@@ -112,7 +125,11 @@ class CustomChatBot:
         logger.info("Initialize chroma vector db.")
 
         # Task initialize langchain chromadb object with chromadb http client and embedding function
-        return ...
+        return Chroma(
+            client=self.client,
+            collection_name=COLLECTION_NAME,
+            embedding_function=self.embedding_function
+        )               
 
     def _index_data_to_vector_db(self):
 
@@ -160,15 +177,49 @@ class CustomChatBot:
         logger.info("Initialize rag chain.")
 
         # Task: Define prompt
-        prompt_template = ...
+        prompt_template = """
+        Answer the following question based on the provided context.
+        If the answer is not in the context, say that you don't know.
+        Context:
+        {context}
+
+        Question:
+        {question}
+        
+        Answer:
+        """ 
 
         # Task: Initialize prompt langchain prompt template
-        rag_prompt = ...
+        rag_prompt = ChatPromptTemplate.from_template(prompt_template)
 
         # Task: Build the RAG pipeline using the retriever and LLM
-        return ...
+        return (
+            {
+                "context": self.retriever | self._format_docs,
+                "question": RunnablePassthrough()
+            }
+                | rag_prompt
+                | self.llm
+                | StrOutputParser()
+                
+                )
 
     def _format_docs(self, docs: List[Document]) -> str:
+        return "\n\n".join(doc.page_content for doc in docs)
+
+    def set_retrieval_count(self, k: int):
+        self.retriever.search_kwargs["k"] = k
+    
+    def get_sources(self, question: str):
+        docs = self.retriever.invoke(question)
+        return [
+            {
+                "content": doc.page_content,
+                "source": doc.metadata.get("source", "Unknown"),
+                "page": doc.metadata.get("page", "Unknown")
+            }
+            for doc in docs
+        ]
         """
         Helper function to format the retrieved documents into a single string.
         
@@ -195,8 +246,11 @@ class CustomChatBot:
             async for event in self.qa_rag_chain.astream_events(question, version="v2"):
                 # Task: Filter stream events to get the text chunk and yield it
                 # Hint: filter for event["event"] == "on_chat_model_stream"
-                chunk = ...
-                yield chunk
+                if event["event"] == "on_chat_model_stream":
+                    chunk = event["data"]["chunk"].content
+                    if isinstance(chunk, str) and chunk:
+                        yield chunk
+
         except Exception as e:
             logger.error(f"Error in stream_answer: {e}", exc_info=True)
             raise

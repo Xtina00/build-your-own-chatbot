@@ -45,6 +45,32 @@ for msg in st.session_state.messages:
     st.chat_message(msg.role).write(msg.content)
 
 # Handle user input
+st.sidebar.header("Search Settings")
+
+retrieval_count = st.sidebar.slider(
+    "Number of retrieved chunks",
+    min_value=1,
+    max_value=10,
+    value=3,
+    step=1
+)
+
+st.session_state["bot"].set_retrieval_count(retrieval_count)
+
+# Export chat history as a TXT file
+if st.session_state.messages:
+    chat_history = "\n\n".join(
+        f"{message.role.upper()}: {message.content}"
+        for message in st.session_state.messages
+    )
+
+    st.sidebar.download_button(
+        label="Download Chat History",
+        data=chat_history,
+        file_name="chat_history.txt",
+        mime="text/plain"
+    )
+    
 if user_query := st.chat_input(placeholder="Ask me anything!"):
     st.session_state.messages.append(ChatMessage(role="user", content=user_query))
     logger.info(f"Write user message in session state {user_query}")
@@ -66,6 +92,15 @@ if user_query := st.chat_input(placeholder="Ask me anything!"):
         if answer:
             logger.info(f"Write assistant message in session state {user_query}")
             st.session_state.messages.append(ChatMessage(role="assistant", content=answer))
+
+    sources = st.session_state["bot"].get_sources(user_query)
+
+    with st.expander("View retrieved sources"):
+        for i, source in enumerate(sources, start=1):
+            st.write(f"Source {i}: {source['source']}")
+            st.write(f"Page: {source['page']}")
+            st.write(source["content"])
+            st.divider()
 
     with st.chat_message("assistant"):
         with st.spinner("Searching for information in your documents and generation response..."):

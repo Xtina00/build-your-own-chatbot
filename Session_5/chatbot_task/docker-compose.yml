@@ -16,7 +16,7 @@ services:
       - EMBEDDING_MODEL=bge-m3
       - PULL_EMBEDDING_MODEL=0
       - OLLAMA_HOST_NAME=ollama
-      - CHROMA_HOST_NAME=chroma
+      - CHROMA_HOST_NAME=chromadb
       - PDF_DOC_PATH=/data/src/AI_Book.pdf
     depends_on:
       chroma:

@@ -1,0 +1,24 @@
+services:
+  chatbot:
+    build:
+      context: ../../
+      dockerfile: Dockerfile
+    container_name: chatbot-session5
+    ports:
+      - "5001:5001"
+    environment:
+      - INDEX_DATA=0
+      - MODEL_NAME=llama3.2:1B
+      - EMBEDDING_MODEL=bge-m3
+      - PULL_EMBEDDING_MODEL=0
+      - OLLAMA_HOST_NAME=ollama
+      - CHROMA_HOST_NAME=chromadb
+      - PDF_DOC_PATH=/app/app/src/AI_Book.pdf
+    volumes:
+      - ./app:/app/app
+    networks:
+      - chatbot-session5
+
+networks:
+  chatbot-session5:
+    external: true
