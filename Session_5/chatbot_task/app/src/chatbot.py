@@ -207,6 +207,18 @@ class CustomChatBot:
                 )
 
     def _format_docs(self, docs: List[Document]) -> str:
+        return "\n\n".join(doc.page_content for doc in docs)
+
+    def get_sources(self, question: str):
+        docs = self.retriever.invoke(question)
+        return [
+            {
+                "content": doc.page_content,
+                "source": doc.metadata.get("source", "Unknown"),
+                "page": doc.metadata.get("page", "Unknown")
+            }
+            for doc in docs
+        ]
         """
         Helper function to format the retrieved documents into a single string.
         
@@ -237,7 +249,7 @@ class CustomChatBot:
                     chunk = event["data"]["chunk"].content
                     if isinstance(chunk, str) and chunk:
                         yield chunk
-                        
+
         except Exception as e:
             logger.error(f"Error in stream_answer: {e}", exc_info=True)
             raise

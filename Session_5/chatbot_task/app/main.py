@@ -67,6 +67,15 @@ if user_query := st.chat_input(placeholder="Ask me anything!"):
             logger.info(f"Write assistant message in session state {user_query}")
             st.session_state.messages.append(ChatMessage(role="assistant", content=answer))
 
+    sources = st.session_state["bot"].get_sources(user_query)
+
+    with st.expander("View retrieved sources"):
+        for i, source in enumerate(sources, start=1):
+            st.write(f"Source {i}: {source['source']}")
+            st.write(f"Page: {source['page']}")
+            st.write(source["content"])
+            st.divider()
+
     with st.chat_message("assistant"):
         with st.spinner("Searching for information in your documents and generation response..."):
             loop = asyncio.new_event_loop()
