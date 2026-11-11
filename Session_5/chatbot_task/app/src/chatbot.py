@@ -75,9 +75,7 @@ class CustomChatBot:
             self._index_data_to_vector_db()
 
         # Task: Initialize the document retriever
-        self.retriever = self.vector_db.as_retriever(
-            search_kwargs={"k": 3}
-        )
+        self.retriever = self.vector_db.as_retriever(search_kwargs={"k": 3})
 
 
         # Task: Initialize the large language model (LLM) from Ollama
@@ -209,6 +207,9 @@ class CustomChatBot:
     def _format_docs(self, docs: List[Document]) -> str:
         return "\n\n".join(doc.page_content for doc in docs)
 
+    def set_retrieval_count(self, k: int):
+        self.retriever.search_kwargs["k"] = k
+    
     def get_sources(self, question: str):
         docs = self.retriever.invoke(question)
         return [
