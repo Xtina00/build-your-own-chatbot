@@ -45,6 +45,18 @@ for msg in st.session_state.messages:
     st.chat_message(msg.role).write(msg.content)
 
 # Handle user input
+st.sidebar.header("Search Settings")
+
+retrieval_count = st.sidebar.slider(
+    "Number of retrieved chunks",
+    min_value=1,
+    max_value=10,
+    value=3,
+    step=1
+)
+
+st.session_state["bot"].set_retrieval_count(retrieval_count)
+
 if user_query := st.chat_input(placeholder="Ask me anything!"):
     st.session_state.messages.append(ChatMessage(role="user", content=user_query))
     logger.info(f"Write user message in session state {user_query}")
