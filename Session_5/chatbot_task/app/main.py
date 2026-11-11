@@ -57,6 +57,20 @@ retrieval_count = st.sidebar.slider(
 
 st.session_state["bot"].set_retrieval_count(retrieval_count)
 
+# Export chat history as a TXT file
+if st.session_state.messages:
+    chat_history = "\n\n".join(
+        f"{message.role.upper()}: {message.content}"
+        for message in st.session_state.messages
+    )
+
+    st.sidebar.download_button(
+        label="Download Chat History",
+        data=chat_history,
+        file_name="chat_history.txt",
+        mime="text/plain"
+    )
+    
 if user_query := st.chat_input(placeholder="Ask me anything!"):
     st.session_state.messages.append(ChatMessage(role="user", content=user_query))
     logger.info(f"Write user message in session state {user_query}")
